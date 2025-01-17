@@ -17,14 +17,10 @@ class YTDLLogger:
         self.logger = logger
 
     def debug(self, msg):
-        # Only log important debug messages
-        if msg.startswith('[debug] '):
-            self.logger.debug(msg)
+        self.logger.debug(msg)
 
     def info(self, msg):
-        # Filter out progress messages
-        if not msg.startswith('[download]') or 'has already been downloaded' in msg:
-            self.logger.info(msg)
+        self.logger.info(msg)
 
     def warning(self, msg):
         self.logger.warning(msg)
@@ -35,12 +31,12 @@ class YTDLLogger:
 class TikTokDownloader:
     TIKTOK_URL_PATTERN = "https://www.tiktokv.com/share/video/"
 
-    def __init__(self, config: Config, gui=None):
+    def __init__(self, config: Config, callback=None):
+        """Initialize downloader with config and optional GUI callback"""
         self.config = config
-        self.gui = gui
-        
-        # Set up logging
+        self.callback = callback  # GUI callback for progress updates
         self.logger = logging.getLogger(__name__)
+        self.is_running = True  # Flag to control download loop
         
         # Check ffmpeg first
         self.ffmpeg_path = self._find_ffmpeg()
@@ -48,14 +44,14 @@ class TikTokDownloader:
             raise RuntimeError("ffmpeg not found. Please install ffmpeg and make sure it's in your PATH.")
         
         # Create necessary directories
-        create_folder(self.config.base_folder)
-        create_folder(os.path.join(self.config.base_folder, "Likes"))
-        create_folder(os.path.join(self.config.base_folder, "metadata"))
-        create_folder(os.path.join(self.config.base_folder, "logs"))
+        create_folder(self.config.output_folder)
+        create_folder(os.path.join(self.config.output_folder, "Likes"))
+        create_folder(os.path.join(self.config.output_folder, "metadata"))
+        create_folder(os.path.join(self.config.output_folder, "logs"))
         
         # Set up log files
-        self.error_log = os.path.join(self.config.base_folder, "logs", "error.log")
-        self.success_log = os.path.join(self.config.base_folder, "logs", "success.log")
+        self.error_log = os.path.join(self.config.output_folder, "logs", "error.log")
+        self.success_log = os.path.join(self.config.output_folder, "logs", "success.log")
         
         # Thread safety
         self._active_downloads: Set[str] = set()
@@ -149,22 +145,23 @@ class TikTokDownloader:
             'extractor_args': {'TikTok': {'download_timeout': self.config.timeout}},
         }
 
-    def _progress_hook(self, d):
+    def _progress_hook(self, d: dict):
         """Progress hook for yt-dlp"""
-        if d['status'] == 'downloading':
-            if 'total_bytes' in d:
-                total = d['total_bytes']
-                downloaded = d['downloaded_bytes']
-                percent = (downloaded / total) * 100
-                speed = d.get('speed', 0)
-                if speed:
-                    self.logger.info(f"[download] {percent:.1f}% of {total/1024/1024:.2f}MiB at {speed/1024/1024:.2f}MiB/s")
-            elif 'downloaded_bytes' in d:
-                self.logger.info(f"[download] {d['downloaded_bytes']/1024/1024:.2f}MiB downloaded")
-        elif d['status'] == 'finished':
-            self.logger.info(f"[download] Download completed: {os.path.basename(d['filename'])}")
-        elif d['status'] == 'error':
-            self.logger.error(f"[download] Error: {d.get('error', 'Unknown error')}")
+        try:
+            if d['status'] == 'downloading':
+                # Only log completion and errors
+                pass
+            elif d['status'] == 'finished':
+                self.logger.info(f"Download complete: {d['filename']}")
+            elif d['status'] == 'error':
+                self.logger.error(f"Download error: {d.get('error')}")
+                
+            # Update GUI progress if callback exists
+            if self.callback and hasattr(self.callback, 'update_progress'):
+                self.callback.update_progress(d)
+                
+        except Exception as e:
+            self.logger.error(f"Error in progress hook: {str(e)}")
 
     def download_video(self, url: str, folder: str, category_path: str) -> bool:
         """Download a single video with duplicate download prevention"""
@@ -202,8 +199,8 @@ class TikTokDownloader:
                     log_message(self.success_log, 
                               f"URL: {url} | TITLE: {title} | ID: {video_id} | CATEGORY: {category_path} | FILE: {final_filename}")
                     
-                    if self.gui:
-                        self.gui.add_success(title, video_id)
+                    if self.callback:
+                        self.callback.add_success(title, video_id)
                     
                     # Mark as downloaded
                     with self._downloads_lock:
@@ -220,8 +217,8 @@ class TikTokDownloader:
             log_message(self.error_log, 
                        f"ERROR: {url} | TITLE: {title} | ID: {video_id} | CATEGORY: {category_path} - {error_msg}")
             
-            if self.gui:
-                self.gui.add_error(title, video_id, error_msg)
+            if self.callback:
+                self.callback.add_error(title, video_id, error_msg)
             
             self.logger.error(f"Failed to download {url}: {error_msg}")
             return False
@@ -247,53 +244,80 @@ class TikTokDownloader:
         """Extract all video URLs from the data file"""
         _, videos = TikTokDataParser.parse_data_file(data)
         
-        # Convert relative paths to absolute
-        videos = [(url, os.path.join(self.config.base_folder, folder), category) 
-                 for url, folder, category in videos]
+        # Filter videos based on category preferences
+        filtered_videos = []
+        for url, folder, category_id in videos:
+            if (
+                (category_id == "likes" and self.config.download_likes) or
+                (category_id == "favorites" and self.config.download_favorites) or
+                (category_id == "history" and self.config.download_history) or
+                (category_id == "shared" and self.config.download_shared) or
+                (category_id == "chat" and self.config.download_chat)
+            ):
+                filtered_videos.append((url, os.path.join(self.config.output_folder, folder), category_id))
         
-        if videos:
-            self.logger.info(f"Total videos found: {len(videos)}")
+        if filtered_videos:
+            self.logger.info(f"Total videos found: {len(filtered_videos)}")
         else:
-            self.logger.warning("No videos found in data file")
+            self.logger.warning("No videos found in selected categories")
         
-        return videos
+        return filtered_videos
+
+    def download_videos(self, videos: List[Tuple[str, str, str]]) -> None:
+        """Download a batch of videos"""
+        if not videos:
+            return
+            
+        # Update GUI with total count if available
+        if self.callback and hasattr(self.callback, 'update_batch_size'):
+            self.callback.update_batch_size(len(videos))
+            
+        # Process videos
+        with ThreadPoolExecutor(max_workers=self.config.concurrent_downloads) as executor:
+            futures = []
+            for url, folder, category in videos:
+                if not self.is_running:
+                    break
+                futures.append(executor.submit(self.download_video, url, folder, category))
+                
+            for future in futures:
+                try:
+                    future.result()
+                except Exception as e:
+                    self.logger.error(f"Error in download thread: {str(e)}")
 
     def process_videos(self, videos: list, folder_name: str, 
-                      link_key: str = "url", category_path: str = "Unknown Category") -> None:
+                      link_key: str = "url", category_path: str = "Unknown Category"):
         """Process a list of videos with concurrent downloads"""
-        folder_path = os.path.join(self.config.base_folder, sanitize_filename(folder_name))
+        if not videos:
+            self.logger.warning("No videos to process")
+            return
+            
+        folder_path = os.path.join(self.config.output_folder, folder_name)
         create_folder(folder_path)
         create_folder(os.path.join(folder_path, "metadata"))
         
-        # Process videos in batches
-        for i in range(0, len(videos), self.config.download_batch_size):
-            batch = videos[i:i + self.config.download_batch_size]
-            self.logger.info(f"Processing batch {i//self.config.download_batch_size + 1} "
-                           f"({len(batch)} videos)")
+        self.logger.info(f"Processing {len(videos)} videos with {self.config.concurrent_downloads} concurrent downloads")
+        
+        with ThreadPoolExecutor(max_workers=self.config.concurrent_downloads) as executor:
+            futures = []
+            for video in videos:
+                if isinstance(video, dict) and link_key in video:
+                    url = video[link_key]
+                    future = executor.submit(self.download_video, url, folder_path, category_path)
+                    futures.append(future)
+                    self.logger.debug(f"Scheduled download for {url}")
             
-            with ThreadPoolExecutor(max_workers=self.config.concurrent_downloads) as executor:
-                futures = []
-                for video in batch:
-                    if isinstance(video, dict) and link_key in video:
-                        url = video[link_key]
-                        future = executor.submit(self.download_video, url, folder_path, category_path)
-                        futures.append(future)
-                        self.logger.debug(f"Scheduled download for {url}")
-                
-                # Wait for all downloads to complete and collect results
-                results = []
-                for future in as_completed(futures):
-                    try:
-                        results.append(future.result())
-                    except Exception as e:
-                        self.logger.error(f"Unexpected error in download thread: {str(e)}")
-                        results.append(False)
-                
-                # Log batch summary
-                total = len(futures)
-                successful = sum(1 for r in results if r)
-                self.logger.info(f"Completed batch: {successful}/{total} videos downloaded successfully")
+            # Wait for all downloads to complete and collect results
+            results = []
+            for future in as_completed(futures):
+                try:
+                    results.append(future.result())
+                except Exception as e:
+                    self.logger.error(f"Unexpected error in download thread: {str(e)}")
+                    results.append(False)
             
-            # Small delay between batches to prevent rate limiting
-            if i + self.config.download_batch_size < len(videos):
-                time.sleep(1)
+            # Log summary
+            total = len(futures)
+            successful = sum(1 for r in results if r)
+            self.logger.info(f"Download complete: {successful}/{total} videos downloaded successfully")

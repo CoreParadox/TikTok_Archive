@@ -4,6 +4,44 @@ from typing import Dict, Any, Tuple, List
 class TikTokDataParser:
     TIKTOK_URL_PATTERN = "https://www.tiktokv.com/share/video/"
     
+    # Category definitions
+    CATEGORIES = {
+        "likes": {
+            "section": "Activity",
+            "name": "Like List",
+            "list_key": "ItemFavoriteList",
+            "folder": "Likes",
+            "count_key": "likes"
+        },
+        "favorites": {
+            "section": "Activity",
+            "name": "Favorite Videos",
+            "list_key": "FavoriteVideoList",
+            "folder": "Favorites",
+            "count_key": "favorites"
+        },
+        "history": {
+            "section": "Activity",
+            "name": "Video Browsing History",
+            "list_key": "VideoList",
+            "folder": "History",
+            "count_key": "history"
+        },
+        "shared": {
+            "section": "Activity",
+            "name": "Share History",
+            "list_key": "ShareHistoryList",
+            "folder": "Shared",
+            "count_key": "shared"
+        },
+        "chat": {
+            "section": "Direct Messages",
+            "name": "Chat History",
+            "folder": "ChatHistory",
+            "count_key": "chat"
+        }
+    }
+    
     @staticmethod
     def parse_data_file(data: Dict[str, Any]) -> Tuple[Dict[str, int], List[Tuple[str, str, str]]]:
         """Parse TikTok data file and return counts and video info
@@ -28,22 +66,13 @@ class TikTokDataParser:
         videos = []
         
         # Process regular categories
-        categories = [
-            ("Like List", "ItemFavoriteList", "Likes", "likes"),
-            ("Favorite Videos", "FavoriteVideoList", "Favorites", "favorites"),
-            ("Video Browsing History", "VideoList", "History", "history"),
-            ("Share History", "ShareHistoryList", "Shared", "shared")
-        ]
-        
-        if "Activity" in data:
-            print("Found Activity section")
-            for category, list_key, folder_name, count_key in categories:
-                if category in data["Activity"]:
-                    print(f"Found {category}")
-                    if category == "Like List":
-                        print("Like List structure:", data["Activity"]["Like List"])
-                    video_list = data["Activity"][category].get(list_key, [])
-                    print(f"{category} > {list_key} count:", len(video_list))
+        for category_id, category in TikTokDataParser.CATEGORIES.items():
+            if category_id == "chat":  # Chat is handled separately
+                continue
+                
+            if category["section"] in data:
+                if category["name"] in data[category["section"]]:
+                    video_list = data[category["section"]][category["name"]].get(category["list_key"], [])
                     count = 0
                     for video in video_list:
                         if isinstance(video, dict):
@@ -55,15 +84,16 @@ class TikTokDataParser:
                                     break
                             if url:
                                 count += 1
-                                category_path = f"Activity > {category} > {list_key}"
-                                videos.append((url, folder_name, category_path))
+                                category_path = f"{category['section']} > {category['name']} > {category['list_key']}"
+                                videos.append((url, category["folder"], category_id))
                     
-                    counts[count_key] = count
+                    counts[category["count_key"]] = count
                     counts["total_videos"] += count
         
         # Process chat videos
-        if "Direct Messages" in data and "Chat History" in data["Direct Messages"]:
-            chat_history = data["Direct Messages"]["Chat History"].get("ChatHistory", {})
+        chat = TikTokDataParser.CATEGORIES["chat"]
+        if chat["section"] in data and chat["name"] in data[chat["section"]]:
+            chat_history = data[chat["section"]][chat["name"]].get("ChatHistory", {})
             chat_count = 0
             
             for username_key, messages in chat_history.items():
@@ -86,11 +116,16 @@ class TikTokDataParser:
                     for word in content.split():
                         if TikTokDataParser.TIKTOK_URL_PATTERN in word:
                             chat_count += 1
-                            category_path = f"Direct Messages > Chat History > {username}"
-                            videos.append((word.strip(), f"ChatHistory/{username}", category_path))
+                            category_path = f"{chat['section']} > {chat['name']} > {username}"
+                            videos.append((word.strip(), f"{chat['folder']}/{username}", "chat"))
                             break
             
             counts["chat"] = chat_count
             counts["total_videos"] += chat_count
         
         return counts, videos
+        
+    @staticmethod
+    def is_category_match(category_id: str, category_from_data: str) -> bool:
+        """Check if a category from the data matches a category ID"""
+        return category_id == category_from_data
