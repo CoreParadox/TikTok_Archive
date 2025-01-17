@@ -1,10 +1,8 @@
-"""File and logging utilities"""
 import os
 import re
 import sys
 import logging
 from datetime import datetime
-from typing import Optional
 
 def create_folder(path: str) -> None:
     if not os.path.exists(path):
@@ -30,7 +28,6 @@ def log_message(log_file: str, message: str) -> None:
 def setup_logging(log_folder: str) -> None:
     create_folder(log_folder)
     
-    # Force UTF-8 encoding for StreamHandler
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     sys.stderr.reconfigure(encoding='utf-8', errors='replace')
     

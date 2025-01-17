@@ -1,6 +1,5 @@
 import os
 import json
-import time
 import queue
 import threading
 import tkinter as tk
@@ -15,6 +14,7 @@ from ..core.downloader import TikTokDownloader
 from ..utils.file_utils import setup_logging
 from src.utils.data_parser import TikTokDataParser
 
+# WARNING NIGHTMARE FILE
 class ConsoleHandler(logging.Handler):
     def __init__(self, console_widget, log_queue):
         super().__init__()
