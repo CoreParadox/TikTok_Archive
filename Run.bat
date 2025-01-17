@@ -14,7 +14,7 @@ if %errorlevel% neq 0 (
 )
 
 :: Run the app
-python app.py
+python main.py
 
 :: Cleanup
 deactivate
