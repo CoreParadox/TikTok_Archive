@@ -1,102 +1,81 @@
 # TikTok Archive Downloader
 
-A Python-based tool for downloading and organizing videos from your TikTok data export.
+A Python tool I made to bulk download videos from TikTok data exports. Handles liked videos, favorites, history, shared videos, chat history, and your own profile videos.
+
+I rarely use python, and whipped this together in a few hours. I promise this code is ugly.
 
 ## Features
 
-- Downloads videos from your TikTok data export including:
+- Downloads all video types from your TikTok data export:
+  - Profile videos (your own posted/reposted content)
   - Liked videos
-  - Favorite videos
-  - Browsing history
+  - Favorites
+  - Watch history
   - Shared videos
-  - Chat history videos
-  - Your own posted/reposted videos
-- Organizes downloads into categorized folders
-- Saves video metadata and thumbnails
-- Concurrent downloads for better performance
-- Configurable download settings
-- Detailed logging and error tracking
+  - Videos from chat history
+- Smart organization - everything goes into categorized folders
+- Saves metadata and thumbnails (optional)
+- Multi-threaded downloads so it's not slow af
+- Easy to use GUI - no command line needed
+- Detailed logging so you know what's happening
 
 ## Requirements
 
-- Python 3.8 or higher
-- FFmpeg (for metadata embedding and thumbnail processing)
+- Python 3.8+
+- FFmpeg (for handling video stuff)
 
-## Installation
+## Setup
 
-1. Clone this repository:
-   ```bash
-   git clone <repository-url>
-   cd tiktok-archive
-   ```
+1. Clone/download this repo somewhere
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
+Windows users can run `Setup.bat` to install everything and then `Run.bat` to run the app
 
-3. Install FFmpeg:
-   - Windows: Download from [FFmpeg website](https://ffmpeg.org/download.html)
-   - Linux: `sudo apt-get install ffmpeg`
-   - macOS: `brew install ffmpeg`
+Mac and Linux users can just make sure they have Python and FFmpeg installed and run the following:
 
-## Usage
+```
+# Install dependencies
+pip install -r requirements.txt
 
-1. Export your TikTok data:
-   - Go to TikTok Settings > Privacy > Download Your Data
-   - Request data in JSON format
-   - Wait for the export to be ready and download it
-   - Extract the downloaded archive
+# Install FFmpeg if you don't have it
+# Linux: sudo apt-get install ffmpeg
+# Mac: brew install ffmpeg
 
-2. Run the script:
-   ```bash
-   python tiktok_archive.py --data path/to/data.json
-   ```
-
-### Command Line Arguments
-
-- `--config`: Path to config file (default: config.json)
-- `--data`: Path to TikTok data export JSON file (default: data.json)
-- `--log-dir`: Directory for log files (default: logs)
-
-### Configuration
-
-You can customize the download behavior by editing `config.json`:
-
-```json
-{
-    "base_folder": "Downloaded_Videos",
-    "output_template": "%(uploader)s - %(title).50s - %(id)s.%(ext)s",
-    "save_metadata": true,
-    "max_retries": 3,
-    "timeout": 300,
-    "concurrent_downloads": 3,
-    "min_video_quality": "720p",
-    "skip_existing": true,
-    "rate_limit": "1M"
-}
+# Run the app
+python main.py
 ```
 
-## Project Structure
+## How to Use
+1. Download your TikTok data
+   1. Login to TikTok
+   2. Go to settings and privacy
+   3. Account
+   4. Download your data
+   5. Request Data => All Data
+   6. File Format => JSON (important!!!!!)
+   7. It may take a while depending on how much data you have, mine was only a few minutes
+   8. Go back to the same path (Settings and Privacy => Account => Download your data)
+   9. Download your Data => Download
+   10. Unzip the file, it should be called user_data_tiktok.json
 
-- `tiktok_archive.py`: Main script
-- `config.py`: Configuration management
-- `downloader.py`: Video download functionality
-- `utils.py`: Utility functions
-- `config.json`: User configuration
-- `requirements.txt`: Python dependencies
+2. Run the app:
+   - Double click `Run.bat` (Windows)
+   - Or run `python main.py` from terminal
 
-## Logs and Output
+3. In the app:
+   - Pick your data file (the user_data.json from step 1)
+   - Choose what to download (profile, likes, etc)
+   - Set your download folder
+   - Hit Start and let it run
 
-- Success and error logs are stored in the download folder
-- Detailed application logs are stored in the logs directory
-- Downloaded videos are organized in folders by category
-- Metadata and thumbnails are stored in a separate metadata folder within each category
+## Config Options
+
+- Output folder: Where to save everything
+- Concurrent downloads: How many videos to download at once (default: 10)
+- Rate limit: Max download speed in MB/s (default: 10MB/s)
+- Save metadata: Keep the video info (on by default)
+- Categories: Toggle which types of videos to download
+
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+Contributions welcome, but I don't imagine this will be useful for too long lol
