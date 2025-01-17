@@ -10,13 +10,5 @@ setup(
         "playwright>=1.40.0",
         "python-dotenv>=1.0.0",
     ],
-    extras_require={
-        "test": [
-            "pytest>=7.4.0",
-            "pytest-cov>=4.1.0",
-            "pytest-asyncio>=0.21.1",
-            "pytest-mock>=3.11.1",
-        ],
-    },
     python_requires=">=3.8",
 )

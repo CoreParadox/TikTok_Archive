@@ -207,28 +207,20 @@ class TikTokArchiverGUI:
     def process_chat_videos(self, chat_history, chat_base_path):
         """Process videos from chat history"""
         chat_videos = []
+        video_string = "https://www.tiktokv.com/share/video/"
         for chat_key, messages in chat_history.items():
             if chat_key.startswith("Chat History with "):
                 # Extract username from the chat key
                 username = chat_key.replace("Chat History with ", "")
                 for message in messages:
-                    if isinstance(message, dict):
-                        # Look for TikTok video URLs in the message content
-                        if "Content" in message and isinstance(message["Content"], str):
-                            content = message["Content"]
-                            if "https://www.tiktok.com/" in content:
-                                # Extract the URL - it might be part of a longer message
-                                for word in content.split():
-                                    if word.startswith("https://www.tiktok.com/"):
-                                        chat_videos.append((username, {"url": word.strip()}))
-                                        break
-                        # Also check the Share Info field which might contain video links
-                        elif "Share Info" in message and isinstance(message["Share Info"], dict):
-                            share_info = message["Share Info"]
-                            if "Link" in share_info and isinstance(share_info["Link"], str):
-                                link = share_info["Link"]
-                                if "https://www.tiktok.com/" in link:
-                                    chat_videos.append((username, {"url": link.strip()}))
+                    if isinstance(message, dict) and "Content" in message and isinstance(message["Content"], str):
+                        content = message["Content"]
+                        if video_string in content:
+                            # Extract the URL - it might be part of a longer message
+                            for word in content.split():
+                                if word.startswith(video_string):
+                                    chat_videos.append((username, {"url": word.strip()}))
+                                    break
         return chat_videos
 
     def process_download(self):
