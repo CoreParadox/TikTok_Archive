@@ -1,0 +1,13 @@
+{
+    "base_folder": "Downloaded_Videos",
+    "output_template": "%(uploader)s - %(title).50s - %(id)s.%(ext)s",
+    "save_metadata": true,
+    "max_retries": 3,
+    "timeout": 300,
+    "concurrent_downloads": 8,
+    "min_video_quality": "720p",
+    "skip_existing": true,
+    "total_rate_limit": "524288000",
+    "max_failed_retries": 3,
+    "download_batch_size": 10
+}
