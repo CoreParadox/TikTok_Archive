@@ -48,11 +48,27 @@ class TikTokArchiverGUI:
         self.total_rate_limit = tk.StringVar(value=str(initial_rate))
         self.save_metadata = tk.BooleanVar(value=self.config.save_metadata)
         
+        # Initialize category variables
+        self.download_profile = tk.BooleanVar(value=self.config.download_profile)
+        self.download_likes = tk.BooleanVar(value=self.config.download_likes)
+        self.download_favorites = tk.BooleanVar(value=self.config.download_favorites)
+        self.download_history = tk.BooleanVar(value=self.config.download_history)
+        self.download_shared = tk.BooleanVar(value=self.config.download_shared)
+        self.download_chat = tk.BooleanVar(value=self.config.download_chat)
+        
         # Add variable traces
         self.output_folder.trace_add("write", self.on_setting_change)
         self.concurrent_downloads.trace_add("write", self.on_setting_change)
         self.total_rate_limit.trace_add("write", self.on_setting_change)
         self.save_metadata.trace_add("write", self.on_setting_change)
+        
+        # Add category traces
+        self.download_profile.trace_add("write", self.on_setting_change)
+        self.download_likes.trace_add("write", self.on_setting_change)
+        self.download_favorites.trace_add("write", self.on_setting_change)
+        self.download_history.trace_add("write", self.on_setting_change)
+        self.download_shared.trace_add("write", self.on_setting_change)
+        self.download_chat.trace_add("write", self.on_setting_change)
         
         # Set up logging
         setup_logging(os.path.join(self.config.output_folder, "logs"))
@@ -152,11 +168,12 @@ class TikTokArchiverGUI:
         self.download_chat.trace_add("write", self.on_setting_change)
         
         # Create checkboxes
-        ttk.Checkbutton(category_frame, text="Likes", variable=self.download_likes).grid(row=0, column=0, padx=10, pady=2)
-        ttk.Checkbutton(category_frame, text="Favorites", variable=self.download_favorites).grid(row=0, column=1, padx=10, pady=2)
-        ttk.Checkbutton(category_frame, text="History", variable=self.download_history).grid(row=0, column=2, padx=10, pady=2)
-        ttk.Checkbutton(category_frame, text="Shared", variable=self.download_shared).grid(row=0, column=3, padx=10, pady=2)
-        ttk.Checkbutton(category_frame, text="Chat", variable=self.download_chat).grid(row=0, column=4, padx=10, pady=2)
+        ttk.Checkbutton(category_frame, text="Profile", variable=self.download_profile).grid(row=0, column=0, padx=10, pady=2)
+        ttk.Checkbutton(category_frame, text="Likes", variable=self.download_likes).grid(row=0, column=1, padx=10, pady=2)
+        ttk.Checkbutton(category_frame, text="Favorites", variable=self.download_favorites).grid(row=0, column=2, padx=10, pady=2)
+        ttk.Checkbutton(category_frame, text="History", variable=self.download_history).grid(row=0, column=3, padx=10, pady=2)
+        ttk.Checkbutton(category_frame, text="Shared", variable=self.download_shared).grid(row=0, column=4, padx=10, pady=2)
+        ttk.Checkbutton(category_frame, text="Chat", variable=self.download_chat).grid(row=0, column=5, padx=10, pady=2)
 
     def browse_folder(self):
         """Open folder browser dialog"""
@@ -204,8 +221,6 @@ class TikTokArchiverGUI:
         self.stop_button.grid(row=0, column=2, padx=5)
 
     def _create_console_section(self):
-        """Create console output and status sections"""
-        # Create frame for console and status boxes
         console_frame = ttk.LabelFrame(self.main_frame, text="Status", padding="5")
         console_frame.grid(row=4, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
         console_frame.columnconfigure(0, weight=1)
@@ -234,7 +249,6 @@ class TikTokArchiverGUI:
         self.error_box.grid(row=3, column=1, sticky=(tk.W, tk.E, tk.N, tk.S), padx=5, pady=5)
 
     def _create_progress_bar(self):
-        """Create progress bars"""
         progress_frame = ttk.LabelFrame(self.main_frame, text="Download Progress", padding="5")
         progress_frame.grid(row=5, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5, padx=5)
         progress_frame.columnconfigure(0, weight=1)  # Make column expandable
@@ -251,14 +265,12 @@ class TikTokArchiverGUI:
         self.completed_files = 0
         
     def update_batch_size(self, total_files: int):
-        """Update the total number of files in the batch"""
         self.total_files = total_files
         self.completed_files = 0
         self.progress_var.set(0)
         self.progress_label.config(text=f"0/{total_files} files completed")
         
     def update_progress(self, status: dict):
-        """Update progress when a file completes"""
         try:
             if status.get('status') == 'finished':
                 self.completed_files += 1
@@ -278,7 +290,6 @@ class TikTokArchiverGUI:
             self.logger.error(f"Error updating progress: {str(e)}")
 
     def browse_file(self):
-        """Open file dialog to select data file"""
         file_path = filedialog.askopenfilename(
             title="Select TikTok Data File",
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
@@ -288,7 +299,6 @@ class TikTokArchiverGUI:
             self.log(f"Selected data file: {file_path}")
 
     def update_config(self):
-        """Update config from UI values"""
         self.config.output_folder = self.output_folder.get()
         try:
             concurrent = int(self.concurrent_downloads.get())
@@ -331,7 +341,6 @@ class TikTokArchiverGUI:
         self.root.after(100, self.update_console)
 
     def toggle_pause(self):
-        """Toggle pause state"""
         if not self.is_running:
             return
             
@@ -344,7 +353,6 @@ class TikTokArchiverGUI:
             self.log("Download resumed")
 
     def stop_download(self):
-        """Stop the download process"""
         self.is_running = False
         self.is_paused = False
         self.pause_button.configure(text="Pause")
@@ -352,8 +360,6 @@ class TikTokArchiverGUI:
         self.log("Download stopped")
 
     def validate_inputs(self) -> bool:
-        """Validate user inputs before starting download"""
-        # Check if data file is selected
         data_file = self.file_path.get()
         if not data_file:
             self.log("Error: Please select a data file")
@@ -379,12 +385,10 @@ class TikTokArchiverGUI:
         return True
 
     def load_data_file(self, file_path: str) -> Dict[str, Any]:
-        """Load and validate the data file"""
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 
-            # Validate basic data structure
             if not isinstance(data, dict):
                 raise ValueError("Invalid data format: root must be a dictionary")
                 
@@ -401,7 +405,6 @@ class TikTokArchiverGUI:
             return None
 
     def process_download(self):
-        """Process the download"""
         if not self.file_path.get():
             self.log("Please select a data file first")
             return
@@ -435,7 +438,7 @@ class TikTokArchiverGUI:
                 return
                 
             total_videos = len(videos)
-            self.log(f"Found {total_videos} videos to download")
+            self.log(f"Videos found in data file")
             
             # Update batch size
             self.update_batch_size(total_videos)
@@ -484,7 +487,6 @@ class TikTokArchiverGUI:
             self.update_buttons()
 
     def start_download(self):
-        """Start download process"""
         if self.download_thread and self.download_thread.is_alive():
             return
             
@@ -518,57 +520,54 @@ class TikTokArchiverGUI:
             self.pause_button.configure(text="Pause")
 
     def on_file_path_change(self, *args):
-        """Update summary when file path changes"""
-        if not os.path.exists(self.file_path.get()):
-            return
-        
+        """Handle data file selection"""
         try:
-            with open(self.file_path.get(), 'r', encoding='utf-8') as f:
-                data = json.load(f)
+            file_path = self.file_path.get()
+            if not file_path:
+                return
             
-            counts, _ = TikTokDataParser.parse_data_file(data)
+            self.log(f"Selected data file: {file_path}")
             
-            # Update summary labels
-            for key, count in counts.items():
-                if key == "size":
-                    continue
-                self.summary_labels[key].configure(text=str(count))
-            
-            # Calculate file size
-            size = os.path.getsize(self.file_path.get())
-            size_str = f"{size / (1024*1024):.2f} MB"
-            self.summary_labels["size"].configure(text=size_str)
-            
-            # Log summary
-            self.log("\n=== Data File Summary ===")
-            self.log(f"Likes: {counts['likes']} videos")
-            self.log(f"Favorites: {counts['favorites']} videos")
-            self.log(f"History: {counts['history']} videos")
-            self.log(f"Shared: {counts['shared']} videos")
-            self.log(f"Chat: {counts['chat']} videos")
-            self.log(f"Total Videos: {counts['total_videos']}")
-            self.log(f"File Size: {size_str}")
-            self.log("========================\n")
-            
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                
+                counts, _, username = TikTokDataParser.parse_data_file(data)
+                
+                if username:
+                    self.log(f"Found username: @{username}")
+                else:
+                    self.log("Warning: No username found in data file")
+                
+                self.log("\nVideo counts by category:")
+                for category, count in counts.items():
+                    if category != "total_videos":
+                        self.log(f"  {category.title()}: {count}")
+                
+                self.start_button.configure(state=tk.NORMAL)
+                
+            except json.JSONDecodeError:
+                self.log("Error: Invalid JSON file")
+                self.start_button.configure(state=tk.DISABLED)
+            except Exception as e:
+                self.log(f"Error reading data file: {str(e)}")
+                self.log(traceback.format_exc())
+                self.start_button.configure(state=tk.DISABLED)
         except Exception as e:
-            self.log(f"Error reading data file: {str(e)}")
-            import traceback
-            self.log(traceback.format_exc())
+            self.log(f"Error: {str(e)}")
+            self.start_button.configure(state=tk.DISABLED)
 
     def add_success(self, title: str, video_id: str):
-        """Add a successful download to the success box"""
         self.success_box.insert(tk.END, f"{title} ({video_id})\n")
         self.success_box.see(tk.END)
         self.success_box.update_idletasks()
 
     def add_error(self, title: str, video_id: str, error: str):
-        """Add a failed download to the error box"""
         self.error_box.insert(tk.END, f"{title} ({video_id}): {error}\n")
         self.error_box.see(tk.END)
         self.error_box.update_idletasks()
 
     def process_chat_videos(self, chat_history: Dict[str, Any], chat_base_path: str) -> List[Tuple[str, Dict[str, str]]]:
-        """Process videos from chat history"""
         chat_videos = []
         video_string = "https://www.tiktokv.com/share/video/"
         for chat_key, messages in chat_history.items():
@@ -590,54 +589,44 @@ class TikTokArchiverGUI:
         """Update config when settings change"""
         try:
             # Update output folder
-            new_folder = self.output_folder.get()
-            if new_folder != self.config.output_folder:
-                self.config.output_folder = new_folder
-                
-            # Update concurrent downloads
+            self.config.output_folder = self.output_folder.get()
+            
+            # Update concurrent downloads if valid
             try:
                 concurrent = int(self.concurrent_downloads.get())
-                if concurrent < 1:
-                    self.log("Warning: Concurrent downloads must be at least 1")
-                    concurrent = 1
-                    self.concurrent_downloads.set(str(concurrent))
-                self.config.concurrent_downloads = concurrent
+                if concurrent > 0:
+                    self.config.concurrent_downloads = concurrent
             except ValueError:
-                self.log("Warning: Invalid concurrent downloads value, using 1")
-                self.config.concurrent_downloads = 1
-                self.concurrent_downloads.set("1")
+                pass
             
-            # Update rate limit
+            # Update rate limit if valid (convert MB/s to bytes/s)
             try:
-                total_rate = float(self.total_rate_limit.get())
-                if total_rate < 1:
-                    self.log("Warning: Rate limit must be at least 1 MB/s")
-                    total_rate = 1
-                    self.total_rate_limit.set(str(total_rate))
-                self.config.total_rate_limit = int(total_rate * 1024 * 1024)  # Convert MB/s to bytes/s
+                rate = float(self.total_rate_limit.get())
+                if rate > 0:
+                    self.config.total_rate_limit = int(rate * 1024 * 1024)
             except ValueError:
-                self.log("Warning: Invalid rate limit value, using 1 MB/s")
-                self.config.total_rate_limit = 1024 * 1024
-                self.total_rate_limit.set("1")
+                pass
             
             # Update save metadata
             self.config.save_metadata = self.save_metadata.get()
             
-            # Update category selection
+            # Update category preferences
+            self.config.download_profile = self.download_profile.get()
             self.config.download_likes = self.download_likes.get()
             self.config.download_favorites = self.download_favorites.get()
             self.config.download_history = self.download_history.get()
             self.config.download_shared = self.download_shared.get()
             self.config.download_chat = self.download_chat.get()
             
-            # Save config
-            self.config.save_config("config.json")
+            # Save config to file
+            config_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "config.json")
+            self.config.save_config(config_file)
             
         except Exception as e:
-            self.log(f"Error updating settings: {str(e)}")
+            self.logger.error(f"Error updating config: {str(e)}")
 
+    # Handle window close event
     def on_closing(self):
-        """Handle window close event"""
         if self.is_running:
             if messagebox.askokcancel("Quit", "Downloads are in progress. Stop downloads and quit?"):
                 self.stop_download()
@@ -646,14 +635,12 @@ class TikTokArchiverGUI:
         self.root.destroy()
         
     def _check_and_close(self):
-        """Check if downloads have stopped before closing"""
         if self.download_thread and self.download_thread.is_alive():
             self.root.after(100, self._check_and_close)  # Check again in 100ms
         else:
             self.root.destroy()
             
     def stop_download(self):
-        """Stop the download process"""
         self.is_running = False
         if self.downloader:
             self.downloader.is_running = False  # Signal downloader to stop

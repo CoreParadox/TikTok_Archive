@@ -1,20 +1,20 @@
-"""Configuration management for TikTok Archiver"""
 import os
 import json
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 class Config:
     def __init__(self, output_folder: str = None, config_file: str = "config.json"):
         # Initialize default values
         self.output_folder = output_folder or os.path.join(os.path.expanduser("~"), "Downloads", "TikTok_Archive")
-        self._concurrent_downloads = 10  # Default to 10 concurrent downloads
-        self._total_rate_limit = 10 * 1024 * 1024  # Default to 10MB/s
+        self._concurrent_downloads = 10
+        self._total_rate_limit = 10 * 1024 * 1024  # 10MB/s
         self.timeout: int = 30
         self.max_retries: int = 3
         self.save_metadata: bool = True
         self.output_template: str = "%(id)s.%(ext)s"
         
         # Category selection defaults
+        self.download_profile = True
         self.download_likes = True
         self.download_favorites = True
         self.download_history = True
@@ -44,15 +44,12 @@ class Config:
         self._total_rate_limit = max(1024 * 1024, value)  # Never allow less than 1MB/s
 
     def save_config(self, config_file: str):
-        """Save current config to file"""
-        # Ensure the directory exists
         os.makedirs(os.path.dirname(os.path.abspath(config_file)), exist_ok=True)
         
         with open(config_file, 'w') as f:
             json.dump(self.to_dict(), f, indent=4)
 
     def load_config(self, config_file: str):
-        """Load config from file"""
         try:
             with open(config_file, 'r') as f:
                 config_data = json.load(f)
@@ -61,11 +58,9 @@ class Config:
                         setattr(self, key, value)
         except Exception as e:
             print(f"Error loading config: {str(e)}")
-            # If there's an error loading, save current config
             self.save_config(config_file)
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert config to dictionary"""
         return {
             "output_folder": self.output_folder,
             "concurrent_downloads": self.concurrent_downloads,
@@ -74,6 +69,7 @@ class Config:
             "max_retries": self.max_retries,
             "save_metadata": self.save_metadata,
             "output_template": self.output_template,
+            "download_profile": self.download_profile,
             "download_likes": self.download_likes,
             "download_favorites": self.download_favorites,
             "download_history": self.download_history,
@@ -83,7 +79,6 @@ class Config:
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Config':
-        """Create config from dictionary"""
         config = cls()
         config.output_folder = data.get("output_folder", config.output_folder)
         config.concurrent_downloads = data.get("concurrent_downloads", config.concurrent_downloads)
@@ -92,6 +87,7 @@ class Config:
         config.max_retries = data.get("max_retries", config.max_retries)
         config.save_metadata = data.get("save_metadata", config.save_metadata)
         config.output_template = data.get("output_template", config.output_template)
+        config.download_profile = data.get("download_profile", config.download_profile)
         config.download_likes = data.get("download_likes", config.download_likes)
         config.download_favorites = data.get("download_favorites", config.download_favorites)
         config.download_history = data.get("download_history", config.download_history)

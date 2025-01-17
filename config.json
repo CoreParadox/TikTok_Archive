@@ -1,11 +1,15 @@
 {
-    "base_folder": "Downloaded_Videos",
-    "concurrent_downloads": 8,
-    "download_batch_size": 10,
-    "total_rate_limit": "524288000",
-    "timeout": 300,
+    "output_folder": "C:\\Users\\Michael\\Downloads\\TikTok_Archive",
+    "concurrent_downloads": 10,
+    "total_rate_limit": 52428800,
+    "timeout": 30,
     "max_retries": 3,
     "save_metadata": true,
-    "output_template": "%(uploader)s - %(title).50s - %(id)s.%(ext)s",
-    "config_file": "config.json"
+    "output_template": "%(id)s.%(ext)s",
+    "download_profile": true,
+    "download_likes": true,
+    "download_favorites": true,
+    "download_history": true,
+    "download_shared": true,
+    "download_chat": true
 }

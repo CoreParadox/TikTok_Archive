@@ -7,12 +7,10 @@ from datetime import datetime
 from typing import Optional
 
 def create_folder(path: str) -> None:
-    """Create folder if it doesn't exist"""
     if not os.path.exists(path):
         os.makedirs(path)
 
 def sanitize_filename(filename: str) -> str:
-    """Remove invalid characters from filename"""
     # Remove invalid characters
     filename = re.sub(r'[<>:"/\\|?*]', '', filename)
     # Remove control characters
@@ -20,7 +18,6 @@ def sanitize_filename(filename: str) -> str:
     return filename.strip()
 
 def log_message(log_file: str, message: str) -> None:
-    """Log a message to a file with timestamp"""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log_line = f"[{timestamp}] {message}\n"
     
@@ -31,7 +28,6 @@ def log_message(log_file: str, message: str) -> None:
         logging.error(f"Failed to write to log file {log_file}: {str(e)}")
 
 def setup_logging(log_folder: str) -> None:
-    """Set up logging configuration"""
     create_folder(log_folder)
     
     # Force UTF-8 encoding for StreamHandler

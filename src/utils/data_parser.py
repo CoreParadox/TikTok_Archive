@@ -1,10 +1,8 @@
-"""Utility functions for parsing TikTok data files"""
-from typing import Dict, Any, Tuple, List
+from typing import Dict, Any, Tuple, List, Optional
 
 class TikTokDataParser:
     TIKTOK_URL_PATTERN = "https://www.tiktokv.com/share/video/"
     
-    # Category definitions
     CATEGORIES = {
         "likes": {
             "section": "Activity",
@@ -43,17 +41,29 @@ class TikTokDataParser:
     }
     
     @staticmethod
-    def parse_data_file(data: Dict[str, Any]) -> Tuple[Dict[str, int], List[Tuple[str, str, str]]]:
-        """Parse TikTok data file and return counts and video info
-        
-        Args:
-            data: Loaded JSON data from TikTok data file
-            
-        Returns:
-            Tuple containing:
-            - Dict with counts for each category (likes, favorites, history, shared, chat)
-            - List of tuples (url, folder_name, category_path) for each video
-        """
+    def extract_username(data: Dict[str, Any]) -> Optional[str]:
+        """Extract username from TikTok data export"""
+        try:
+            if "Profile" in data:
+                print(f"Profile data: {data['Profile'].keys()}")
+                profile = data["Profile"].get("Profile Information", {})
+                print(f"Profile Information: {profile.keys()}")
+                if "ProfileMap" in profile:
+                    print(f"ProfileMap: {profile['ProfileMap']}")
+                    username = profile["ProfileMap"].get("userName")
+                    print(f"Found username: {username}")
+                    return username
+                print("No ProfileMap found")
+            print("No Profile section found")
+            return None
+        except Exception as e:
+            print(f"Error extracting username: {e}")
+            return None
+    
+    @staticmethod
+    def parse_data_file(data: Dict[str, Any]) -> Tuple[Dict[str, int], List[Tuple[str, str, str]], Optional[str]]:
+        """Returns (category_counts, video_list, username) from TikTok data export"""
+        print("\n=== Starting parse_data_file ===")
         counts = {
             "total_videos": 0,
             "likes": 0,
@@ -64,6 +74,8 @@ class TikTokDataParser:
         }
         
         videos = []
+        username = TikTokDataParser.extract_username(data)
+        print(f"Username after extraction: {username}")
         
         # Process regular categories
         for category_id, category in TikTokDataParser.CATEGORIES.items():
@@ -71,24 +83,25 @@ class TikTokDataParser:
                 continue
                 
             if category["section"] in data:
-                if category["name"] in data[category["section"]]:
-                    video_list = data[category["section"]][category["name"]].get(category["list_key"], [])
-                    count = 0
-                    for video in video_list:
-                        if isinstance(video, dict):
-                            # Try different possible URL fields
-                            url = None
-                            for field in ["link", "Link", "shareURL", "ShareURL", "videoURL", "VideoURL"]:
-                                if field in video and video[field]:
-                                    url = video[field]
-                                    break
-                            if url:
-                                count += 1
-                                category_path = f"{category['section']} > {category['name']} > {category['list_key']}"
-                                videos.append((url, category["folder"], category_id))
-                    
-                    counts[category["count_key"]] = count
-                    counts["total_videos"] += count
+                category_data = data[category["section"]].get(category["name"], {})
+                if category_data:
+                    video_list = category_data.get(category["list_key"], [])
+                    if video_list:
+                        count = 0
+                        for video in video_list:
+                            if isinstance(video, dict):
+                                url = None
+                                for field in ["link", "Link", "shareURL", "ShareURL", "videoURL", "VideoURL"]:
+                                    if field in video and video[field]:
+                                        url = video[field]
+                                        break
+                                if url:
+                                    count += 1
+                                    category_path = f"{category['section']} > {category['name']} > {category['list_key']}"
+                                    videos.append((url, category["folder"], category_id))
+                        
+                        counts[category["count_key"]] = count
+                        counts["total_videos"] += count
         
         # Process chat videos
         chat = TikTokDataParser.CATEGORIES["chat"]
@@ -96,36 +109,37 @@ class TikTokDataParser:
             chat_history = data[chat["section"]][chat["name"]].get("ChatHistory", {})
             chat_count = 0
             
-            for username_key, messages in chat_history.items():
-                if not username_key.startswith("Chat History with "):
-                    continue
-                    
-                username = username_key.replace("Chat History with ", "").rstrip(":")
-                if not isinstance(messages, list):
-                    continue
-                    
-                for message in messages:
-                    if not isinstance(message, dict) or "Content" not in message:
+            if chat_history:
+                for username_key, messages in chat_history.items():
+                    if not username_key.startswith("Chat History with "):
                         continue
                         
-                    content = message.get("Content", "")
-                    if not isinstance(content, str) or TikTokDataParser.TIKTOK_URL_PATTERN not in content:
+                    chat_username = username_key.replace("Chat History with ", "").rstrip(":")
+                    if not isinstance(messages, list):
                         continue
                         
-                    # Extract URL from message
-                    for word in content.split():
-                        if TikTokDataParser.TIKTOK_URL_PATTERN in word:
-                            chat_count += 1
-                            category_path = f"{chat['section']} > {chat['name']} > {username}"
-                            videos.append((word.strip(), f"{chat['folder']}/{username}", "chat"))
-                            break
-            
-            counts["chat"] = chat_count
-            counts["total_videos"] += chat_count
+                    for message in messages:
+                        if not isinstance(message, dict) or "Content" not in message:
+                            continue
+                            
+                        content = message.get("Content", "")
+                        if not isinstance(content, str) or TikTokDataParser.TIKTOK_URL_PATTERN not in content:
+                            continue
+                            
+                        for word in content.split():
+                            if TikTokDataParser.TIKTOK_URL_PATTERN in word:
+                                chat_count += 1
+                                category_path = f"{chat['section']} > {chat['name']} > {chat_username}"
+                                videos.append((word.strip(), f"{chat['folder']}/{chat_username}", "chat"))
+                                break
+                
+                counts["chat"] = chat_count
+                counts["total_videos"] += chat_count
         
-        return counts, videos
-        
+        print(f"Username before return: {username}")
+        print("=== Finished parse_data_file ===\n")
+        return counts, videos, username
+
     @staticmethod
     def is_category_match(category_id: str, category_from_data: str) -> bool:
-        """Check if a category from the data matches a category ID"""
         return category_id == category_from_data
