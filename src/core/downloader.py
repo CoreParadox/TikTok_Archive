@@ -70,10 +70,12 @@ class TikTokDownloader:
         except (subprocess.CalledProcessError, FileNotFoundError) as e:
             self.logger.warning(f"ffmpeg not found in PATH: {str(e)}")
             
-            # Check tools directory
-            tools_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tools")
+            # Check tools directory in root
+            root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            tools_dir = os.path.join(root_dir, "tools")
             ffmpeg_path = os.path.join(tools_dir, "ffmpeg.exe")
-        if os.path.exists(ffmpeg_path):
+            
+            if os.path.exists(ffmpeg_path):
                 try:
                     # Verify the ffmpeg in tools works
                     result = subprocess.run([ffmpeg_path, "-version"], capture_output=True, text=True)
@@ -84,8 +86,8 @@ class TikTokDownloader:
                         return ffmpeg_path
                 except subprocess.CalledProcessError as e:
                     self.logger.error(f"tools ffmpeg failed verification: {str(e)}")
-                else:
-                    self.logger.error(f"ffmpeg not found in tools directory: {tools_dir}")
+            else:
+                self.logger.error(f"ffmpeg not found in tools directory: {tools_dir}")
         
         return None
 
