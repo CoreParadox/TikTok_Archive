@@ -4,6 +4,9 @@ A Python tool I made to bulk download videos from TikTok data exports. Handles l
 
 I rarely use python, and whipped this together in a few hours. I promise this code is ugly.
 
+<sub><sub><sub><sub><sub><sub><sub><sub><sub>if you judge me on this code you go to hell before you die</sub></sub></sub></sub></sub></sub>
+
+
 # Support
 If this helped and you'd like to give me some thanks you can do so on 
 * [ko-fi](coreparadox.com/☕)
