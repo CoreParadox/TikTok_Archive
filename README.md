@@ -13,16 +13,16 @@ I rarely use python, and whipped this together in a few hours. I promise this co
   - Watch history
   - Shared videos
   - Videos from chat history
-- Smart organization - everything goes into categorized folders
+- Videos are saved into different folders based on category
 - Saves metadata and thumbnails (optional)
 - Multi-threaded downloads so it's not slow af
-- Easy to use GUI - no command line needed
-- Detailed logging so you know what's happening
+- Gui Based
+- Detailed logging, ideally meant to be reentrant based off of success/error logs.
 
 ## Requirements
 
 - Python 3.8+
-- FFmpeg (for handling video stuff)
+- FFmpeg
 
 ## Setup
 
