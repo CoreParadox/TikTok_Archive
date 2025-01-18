@@ -4,6 +4,16 @@ A Python tool I made to bulk download videos from TikTok data exports. Handles l
 
 I rarely use python, and whipped this together in a few hours. I promise this code is ugly.
 
+<sub><sub><sub><sub><sub><sub><sub><sub><sub>if you judge me on this code you go to hell before you die</sub></sub></sub></sub></sub></sub>
+
+
+# Support
+If this helped and you'd like to give me some thanks you can do so on 
+* [ko-fi](coreparadox.com/☕)
+* Following/subscribing to me on [twitch.tv](coreparadox.com/twitch)
+* Follow me on [Bluesky](https://bsky.app/profile/coreparadox.com)
+
+
 ## Features
 
 - Downloads all video types from your TikTok data export:
@@ -13,16 +23,16 @@ I rarely use python, and whipped this together in a few hours. I promise this co
   - Watch history
   - Shared videos
   - Videos from chat history
-- Smart organization - everything goes into categorized folders
+- Videos are saved into different folders based on category
 - Saves metadata and thumbnails (optional)
 - Multi-threaded downloads so it's not slow af
-- Easy to use GUI - no command line needed
-- Detailed logging so you know what's happening
+- Gui Based
+- Detailed logging, ideally meant to be reentrant based off of success/error logs.
 
 ## Requirements
 
 - Python 3.8+
-- FFmpeg (for handling video stuff)
+- FFmpeg
 
 ## Setup
 
