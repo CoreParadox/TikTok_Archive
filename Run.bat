@@ -19,7 +19,7 @@ if %errorlevel% neq 0 (
 )
 
 :: Run the app
-python "%ROOT_DIR%src\main.py"
+python "%ROOT_DIR%\main.py"
 
 :: Cleanup
 deactivate
