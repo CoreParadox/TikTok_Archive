@@ -1,3 +1,7 @@
+# Update
+
+As tiktok is down in the US, this will no longer work for those users. I'm not sure the status of videos of US user accounts either.
+
 # TikTok Archive Downloader
 
 A Python tool I made to bulk download videos from TikTok data exports. Handles liked videos, favorites, history, shared videos, chat history, and your own profile videos.
